@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: kafka-playground
+
+  kafka:
+    # Where Kafka broker is running (Docker exposes 9092)
+    bootstrap-servers: localhost:9092
+
+    # ── Default Producer settings ──
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+    # ── Default Consumer settings ──
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest   # Read from beginning if no committed offset
+
+    # ── Retry & resilience (wait for Kafka to be fully ready) ──
+    listener:
+      missing-topics-fatal: false    # Don't crash if topics don't exist yet
+    admin:
+      fail-fast: false               # Don't fail startup if broker not ready
+
+# ═══════════════════════════════════════════════════════════════
+#  APP-LEVEL KAFKA CONFIG — All topics defined HERE, not in Java!
+#
+#  ✅ To add a new topic:  just add an entry below, restart app.
+#  ✅ To change partitions: update the number below, restart app.
+#  ✅ No Java code changes needed!
+# ═══════════════════════════════════════════════════════════════
+app:
+  kafka:
+    topics:
+      greetings:
+        name: greetings
+        partitions: 3
+        replicas: 1
+
+      orders:
+        name: orders
+        partitions: 3
+        replicas: 1
+
+      notifications:
+        name: notifications
+        partitions: 2
+        replicas: 1
+
+      # ── Want a new topic? Just add it here! ──
+      # payments:
+      #   name: payments
+      #   partitions: 4
+      #   replicas: 1
+
+# Nice colored logs
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg%n"

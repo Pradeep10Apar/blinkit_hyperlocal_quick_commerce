@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug Kafka Playground",
+            "request": "launch",
+            "mainClass": "com.learn.kafka.KafkaPlaygroundApp",
+            "projectName": "kafka-playground",
+            "vmArgs": "-Dspring.profiles.active=default"
+        }
+    ]
+}

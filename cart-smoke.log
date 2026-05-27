@@ -1,0 +1,201 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.6)
+
+2026-03-25T16:46:07.076Z  INFO 28452 --- [blinkit-phase1] [           main] c.b.phase1.BlinkitPhase1Application      : Starting BlinkitPhase1Application v0.0.1-SNAPSHOT using Java 17.0.11 with PID 28452 (C:\Users\papar\Downloads\blinkit-phase1-starter\blinkit-phase1-starter\target\blinkit-phase1-starter-0.0.1-SNAPSHOT.jar started by papar in C:\Users\papar\Downloads\blinkit-phase1-starter\blinkit-phase1-starter)
+2026-03-25T16:46:07.092Z DEBUG 28452 --- [blinkit-phase1] [           main] c.b.phase1.BlinkitPhase1Application      : Running with Spring Boot v3.3.6, Spring v6.1.15
+2026-03-25T16:46:07.095Z  INFO 28452 --- [blinkit-phase1] [           main] c.b.phase1.BlinkitPhase1Application      : No active profile set, falling back to 1 default profile: "default"
+2026-03-25T16:46:11.421Z  INFO 28452 --- [blinkit-phase1] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-25T16:46:11.429Z  INFO 28452 --- [blinkit-phase1] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-25T16:46:11.821Z  INFO 28452 --- [blinkit-phase1] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 368 ms. Found 2 JPA repository interfaces.
+2026-03-25T16:46:11.903Z  INFO 28452 --- [blinkit-phase1] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-03-25T16:46:11.908Z  INFO 28452 --- [blinkit-phase1] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-03-25T16:46:11.941Z  INFO 28452 --- [blinkit-phase1] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.blinkit.phase1.product.outbox.ProductOutboxRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-03-25T16:46:11.942Z  INFO 28452 --- [blinkit-phase1] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.blinkit.phase1.product.ProductRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-03-25T16:46:11.943Z  INFO 28452 --- [blinkit-phase1] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 11 ms. Found 0 Redis repository interfaces.
+2026-03-25T16:46:15.273Z  INFO 28452 --- [blinkit-phase1] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-03-25T16:46:15.313Z  INFO 28452 --- [blinkit-phase1] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-25T16:46:15.315Z  INFO 28452 --- [blinkit-phase1] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.33]
+2026-03-25T16:46:15.442Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-25T16:46:15.447Z  INFO 28452 --- [blinkit-phase1] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 8161 ms
+2026-03-25T16:46:16.179Z DEBUG 28452 --- [blinkit-phase1] [           main] o.s.w.f.ServerHttpObservationFilter      : Filter 'webMvcObservationFilter' configured for use
+2026-03-25T16:46:17.251Z  INFO 28452 --- [blinkit-phase1] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-25T16:46:17.967Z  INFO 28452 --- [blinkit-phase1] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@31880efa
+2026-03-25T16:46:17.975Z  INFO 28452 --- [blinkit-phase1] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-25T16:46:18.075Z  INFO 28452 --- [blinkit-phase1] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/blinkit (PostgreSQL 16.11)
+2026-03-25T16:46:18.316Z  INFO 28452 --- [blinkit-phase1] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 4 migrations (execution time 00:00.122s)
+2026-03-25T16:46:18.374Z  INFO 28452 --- [blinkit-phase1] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 4
+2026-03-25T16:46:18.385Z  INFO 28452 --- [blinkit-phase1] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-03-25T16:46:18.676Z  INFO 28452 --- [blinkit-phase1] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-25T16:46:18.925Z  INFO 28452 --- [blinkit-phase1] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-03-25T16:46:19.105Z  INFO 28452 --- [blinkit-phase1] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-25T16:46:20.088Z  INFO 28452 --- [blinkit-phase1] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-25T16:46:22.433Z  INFO 28452 --- [blinkit-phase1] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-25T16:46:22.563Z  INFO 28452 --- [blinkit-phase1] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-25T16:46:24.947Z  INFO 28452 --- [blinkit-phase1] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-25T16:46:25.868Z  INFO 28452 --- [blinkit-phase1] [           main] c.b.p.p.ProductImageDownloadService      : Product images directory: C:\Users\papar\Downloads\blinkit-phase1-starter\blinkit-phase1-starter\product-images
+2026-03-25T16:46:26.105Z  WARN 28452 --- [blinkit-phase1] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-25T16:46:26.647Z DEBUG 28452 --- [blinkit-phase1] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 13 mappings in 'requestMappingHandlerMapping'
+2026-03-25T16:46:26.854Z DEBUG 28452 --- [blinkit-phase1] [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Patterns [/webjars/**, /**] in 'resourceHandlerMapping'
+2026-03-25T16:46:26.997Z DEBUG 28452 --- [blinkit-phase1] [           main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-03-25T16:46:27.131Z DEBUG 28452 --- [blinkit-phase1] [           main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 1 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-03-25T16:46:29.634Z  INFO 28452 --- [blinkit-phase1] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-03-25T16:46:30.098Z  INFO 28452 --- [blinkit-phase1] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-03-25T16:46:30.437Z  INFO 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-25T16:46:30.438Z  INFO 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-25T16:46:30.439Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Detected StandardServletMultipartResolver
+2026-03-25T16:46:30.440Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Detected AcceptHeaderLocaleResolver
+2026-03-25T16:46:30.441Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Detected FixedThemeResolver
+2026-03-25T16:46:30.445Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@72e4905c
+2026-03-25T16:46:30.448Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.support.SessionFlashMapManager@eb7d4ba
+2026-03-25T16:46:30.452Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2026-03-25T16:46:30.452Z  INFO 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 13 ms
+2026-03-25T16:46:30.530Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/actuator/health", parameters={}
+2026-03-25T16:46:30.566Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.k.clients.consumer.ConsumerConfig    : ConsumerConfig values: 
+	allow.auto.create.topics = true
+	auto.commit.interval.ms = 5000
+	auto.include.jmx.reporter = true
+	auto.offset.reset = earliest
+	bootstrap.servers = [localhost:9092]
+	check.crcs = true
+	client.dns.lookup = use_all_dns_ips
+	client.id = consumer-blinkit-phase1-1
+	client.rack = 
+	connections.max.idle.ms = 540000
+	default.api.timeout.ms = 60000
+	enable.auto.commit = false
+	enable.metrics.push = true
+	exclude.internal.topics = true
+	fetch.max.bytes = 52428800
+	fetch.max.wait.ms = 500
+	fetch.min.bytes = 1
+	group.id = blinkit-phase1
+	group.instance.id = null
+	group.protocol = classic
+	group.remote.assignor = null
+	heartbeat.interval.ms = 3000
+	interceptor.classes = []
+	internal.leave.group.on.close = true
+	internal.throw.on.fetch.stable.offset.unsupported = false
+	isolation.level = read_uncommitted
+	key.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+	max.partition.fetch.bytes = 1048576
+	max.poll.interval.ms = 300000
+	max.poll.records = 500
+	metadata.max.age.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partition.assignment.strategy = [class org.apache.kafka.clients.consumer.RangeAssignor, class org.apache.kafka.clients.consumer.CooperativeStickyAssignor]
+	receive.buffer.bytes = 65536
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	session.timeout.ms = 45000
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	value.deserializer = class org.apache.kafka.common.serialization.StringDeserializer
+
+2026-03-25T16:46:30.632Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] m.m.a.RequestResponseBodyMethodProcessor : Read "application/octet-stream" to []
+2026-03-25T16:46:30.954Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-03-25T16:46:31.753Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.k.clients.consumer.ConsumerConfig    : These configurations '[spring.json.trusted.packages]' were supplied but are not used yet.
+2026-03-25T16:46:31.761Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 3.7.1
+2026-03-25T16:46:31.763Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: e2494e6ffb89f828
+2026-03-25T16:46:31.764Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1774457191754
+2026-03-25T16:46:31.810Z  INFO 28452 --- [blinkit-phase1] [           main] o.a.k.c.c.internals.LegacyKafkaConsumer  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Subscribed to topic(s): product-events
+2026-03-25T16:46:31.897Z  INFO 28452 --- [blinkit-phase1] [           main] c.b.phase1.BlinkitPhase1Application      : Started BlinkitPhase1Application in 26.702 seconds (process running for 28.352)
+2026-03-25T16:46:31.929Z  INFO 28452 --- [blinkit-phase1] [           main] c.b.p.elastic.ElasticIndexInitializer    : Ensuring Elasticsearch index 'products_v1' exists...
+2026-03-25T16:46:32.076Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/actuator/health", parameters={}
+2026-03-25T16:46:32.096Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-1] m.m.a.RequestResponseBodyMethodProcessor : Read "application/octet-stream" to []
+2026-03-25T16:46:33.237Z DEBUG 28452 --- [blinkit-phase1] [           main] o.s.w.r.f.client.ExchangeFunctions       : [72dc0d72] HTTP HEAD http://localhost:9200/products_v1
+2026-03-25T16:46:33.241Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/vnd.spring-boot.actuator.v3+json', given [*/*] and supported [application/vnd.spring-boot.actuator.v3+json, application/vnd.spring-boot.actuator.v2+json, application/json]
+2026-03-25T16:46:33.241Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/vnd.spring-boot.actuator.v3+json', given [*/*] and supported [application/vnd.spring-boot.actuator.v3+json, application/vnd.spring-boot.actuator.v2+json, application/json]
+2026-03-25T16:46:33.278Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [org.springframework.boot.actuate.health.SystemHealth@2374226c]
+2026-03-25T16:46:33.279Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [org.springframework.boot.actuate.health.SystemHealth@a8e416d]
+2026-03-25T16:46:33.325Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-25T16:46:33.325Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-25T16:46:33.959Z DEBUG 28452 --- [blinkit-phase1] [ctor-http-nio-2] o.s.w.r.f.client.ExchangeFunctions       : [72dc0d72] [79f1113c-1] Response 200 OK
+2026-03-25T16:46:34.010Z  INFO 28452 --- [blinkit-phase1] [           main] c.b.phase1.elastic.ElasticIndexService   : Elasticsearch index 'products_v1' already exists.
+2026-03-25T16:46:34.396Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] org.apache.kafka.clients.Metadata        : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Cluster ID: redpanda.4d8f9637-cdbb-4423-80b8-db86eef7b494
+2026-03-25T16:46:34.399Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Discovered group coordinator localhost:9092 (id: 2147483647 rack: null)
+2026-03-25T16:46:34.407Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] (Re-)joining group
+2026-03-25T16:46:34.455Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Request joining group due to: need to re-join with the given member-id: consumer-blinkit-phase1-1-1126978b-4577-4906-af99-0d56f614e197
+2026-03-25T16:46:34.456Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] (Re-)joining group
+2026-03-25T16:46:34.462Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Successfully joined group with generation Generation{generationId=37, memberId='consumer-blinkit-phase1-1-1126978b-4577-4906-af99-0d56f614e197', protocol='range'}
+2026-03-25T16:46:34.483Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Finished assignment for group at generation 37: {consumer-blinkit-phase1-1-1126978b-4577-4906-af99-0d56f614e197=Assignment(partitions=[product-events-0])}
+2026-03-25T16:46:34.511Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Successfully synced group in generation Generation{generationId=37, memberId='consumer-blinkit-phase1-1-1126978b-4577-4906-af99-0d56f614e197', protocol='range'}
+2026-03-25T16:46:34.513Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Notifying assignor about the new Assignment(partitions=[product-events-0])
+2026-03-25T16:46:34.522Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] k.c.c.i.ConsumerRebalanceListenerInvoker : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Adding newly assigned partitions: product-events-0
+2026-03-25T16:46:34.550Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.a.k.c.c.internals.ConsumerUtils        : Setting offset for partition product-events-0 to the committed offset FetchPosition{offset=6010, offsetEpoch=Optional.empty, currentLeader=LeaderAndEpoch{leader=Optional[localhost:9092 (id: 0 rack: null)], epoch=3}}
+2026-03-25T16:46:34.554Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] o.s.k.l.KafkaMessageListenerContainer    : blinkit-phase1: partitions assigned: [product-events-0]
+2026-03-25T16:46:34.636Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/api/cart", parameters={}
+2026-03-25T16:46:34.640Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.blinkit.phase1.cart.CartController#getCart(String)
+2026-03-25T16:46:34.773Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-3] m.m.a.RequestResponseBodyMethodProcessor : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-25T16:46:34.787Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-3] m.m.a.RequestResponseBodyMethodProcessor : Writing [CartResponse[cartId=77ee5786-90ee-4ab5-a90c-af46d7c74eae, items=[], totalQuantity=0, subtotal=0, upd (truncated)...]
+2026-03-25T16:46:34.812Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-25T16:46:34.840Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-5] o.s.web.servlet.DispatcherServlet        : POST "/api/cart/items", parameters={}
+2026-03-25T16:46:34.842Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.blinkit.phase1.cart.CartController#addItem(String, AddCartItemRequest)
+2026-03-25T16:46:34.924Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-5] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [AddCartItemRequest[productId=28da2fbd-a288-4ace-baca-a83af93cd2d0, quantity=2]]
+2026-03-25T16:46:35.569Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-5] m.m.a.RequestResponseBodyMethodProcessor : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-03-25T16:46:35.582Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-5] m.m.a.RequestResponseBodyMethodProcessor : Writing [CartResponse[cartId=77ee5786-90ee-4ab5-a90c-af46d7c74eae, items=[CartItemResponse[productId=28da2fbd (truncated)...]
+2026-03-25T16:46:35.589Z DEBUG 28452 --- [blinkit-phase1] [nio-8080-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-03-25T16:55:34.748Z  INFO 28452 --- [blinkit-phase1] [ntainer#0-0-C-1] org.apache.kafka.clients.NetworkClient   : [Consumer clientId=consumer-blinkit-phase1-1, groupId=blinkit-phase1] Node -1 disconnected.

@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: blinkit-phase1
+  datasource:
+    url: jdbc:postgresql://localhost:5432/blinkit
+    username: blinkit
+    password: blinkit
+  hikari:
+    connectionInitSql: SET TIME ZONE 'UTC'
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_versioned_data: true
+        batch_size: 200
+        order_inserts: true
+        order_updates: true
+
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baselineOnMigrate : true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: blinkit-phase1
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      properties:
+        linger.ms: 5
+        acks: all
+
+
+
+
+app:
+  elastic:
+    base-url: http://localhost:9200
+    index: products_v1
+
+  elasticsearch:
+    url : http://localhost:9200
+  outbox:
+    poll:
+      batch-size: 500
+      fixed-delay-ms: 1000
+  kafka:
+    topic:
+      product-events: product-events
+
+blinkit:
+  cart:
+    ttl-hours: ${BLINKIT_CART_TTL_HOURS:168}
+  images:
+    # Local dev:  resolves to <project-dir>/product-images/
+    # In Docker:  overridden by BLINKIT_IMAGES_STORAGE_DIR env var -> /app/images (named volume)
+    storage-dir: ${BLINKIT_IMAGES_STORAGE_DIR:./product-images}
+    # Local dev:  http://localhost:8080/api/images
+    # In Docker:  overridden by BLINKIT_IMAGES_BASE_URL env var
+    base-url: ${BLINKIT_IMAGES_BASE_URL:http://localhost:8080/api/images}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+logging:
+  level:
+    org.springframework.web: DEBUG
+    com.blinkit.phase1: DEBUG

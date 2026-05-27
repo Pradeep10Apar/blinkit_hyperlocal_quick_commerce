@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "blinkit-phase1-starter",
+			"path": "."
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "disabled"
+	}
+}

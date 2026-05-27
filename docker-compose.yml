@@ -1,0 +1,100 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: blinkit
+      POSTGRES_USER: blinkit
+      POSTGRES_PASSWORD: blinkit
+      TZ: UTC
+      PGTZ: UTC
+    command: ["postgres", "-c", "timezone=UTC"]
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blinkit -d blinkit"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.2
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - "1G"
+      - --reserve-memory
+      - "0M"
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://localhost:9092
+    ports:
+      - "9092:9092"
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "300", "10"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  blinkit-app:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blinkit
+      SPRING_DATASOURCE_USERNAME: blinkit
+      SPRING_DATASOURCE_PASSWORD: blinkit
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      APP_ELASTIC_BASE_URL: http://elasticsearch:9200
+      APP_ELASTICSEARCH_URL: http://elasticsearch:9200
+      # Images stored in named volume — survives container restarts
+      BLINKIT_IMAGES_STORAGE_DIR: /app/images
+      BLINKIT_IMAGES_BASE_URL: http://localhost:8080/api/images
+    volumes:
+      - product-images:/app/images   # named volume — persists across restarts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  product-images:   # Docker manages this — data survives container restarts/upgrades
+  redis-data:
