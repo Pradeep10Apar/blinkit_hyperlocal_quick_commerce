@@ -1,4 +1,4 @@
-# Blinkit Phase 1 — Quick Commerce Backend
+# NearrBuy Hyperlocal  — Quick Commerce Backend
 
 ## Table of Contents
 - [Project Overview](#project-overview)
