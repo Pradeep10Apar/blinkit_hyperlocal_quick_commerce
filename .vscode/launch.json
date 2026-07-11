@@ -4,7 +4,41 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
+        {
+            "type": "java",
+            "name": "ApiGatewayApplication",
+            "request": "launch",
+            "mainClass": "com.blinkit.gateway.ApiGatewayApplication",
+            "projectName": "api-gateway"
+        },
+        {
+            "type": "java",
+            "name": "DiscoveryServerApplication",
+            "request": "launch",
+            "mainClass": "com.blinkit.discovery.DiscoveryServerApplication",
+            "projectName": "discovery-server"
+        },
+        {
+            "type": "java",
+            "name": "BlinkitPhase1Application",
+            "request": "launch",
+            "mainClass": "com.blinkit.phase1.BlinkitPhase1Application",
+            "projectName": "blinkit-app"
+        },
+        {
+            "type": "java",
+            "name": "InventoryServiceApplication",
+            "request": "launch",
+            "mainClass": "com.blinkit.inventory.InventoryServiceApplication",
+            "projectName": "inventory-service"
+        },
+        {
+            "type": "java",
+            "name": "SingletonExerciseTest",
+            "request": "launch",
+            "mainClass": "com.blinkit.learning.singleton.SingletonExerciseTest",
+            "projectName": "blinkit-app"
+        },
         {
             "type": "java",
             "name": "Current File",

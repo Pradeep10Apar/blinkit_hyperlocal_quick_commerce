@@ -1,0 +1,132 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PostgreSQL for blinkit-app
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-blinkit-config
+  namespace: blinkit
+data:
+  POSTGRES_DB: blinkit
+  POSTGRES_USER: postgres
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-blinkit-secret
+  namespace: blinkit
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-blinkit
+  namespace: blinkit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-blinkit
+  template:
+    metadata:
+      labels:
+        app: postgres-blinkit
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-blinkit-config
+            - secretRef:
+                name: postgres-blinkit-secret
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-blinkit
+  namespace: blinkit
+spec:
+  selector:
+    app: postgres-blinkit
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# ═══════════════════════════════════════════════════════════════════════════════
+# PostgreSQL for inventory-service
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-inventory-config
+  namespace: blinkit
+data:
+  POSTGRES_DB: inventory
+  POSTGRES_USER: postgres
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-inventory-secret
+  namespace: blinkit
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-inventory
+  namespace: blinkit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-inventory
+  template:
+    metadata:
+      labels:
+        app: postgres-inventory
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-inventory-config
+            - secretRef:
+                name: postgres-inventory-secret
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-inventory
+  namespace: blinkit
+spec:
+  selector:
+    app: postgres-inventory
+  ports:
+    - port: 5432
+      targetPort: 5432

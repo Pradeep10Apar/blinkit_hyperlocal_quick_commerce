@@ -1,0 +1,7 @@
+# Namespace to isolate all blinkit resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: blinkit
+  labels:
+    app.kubernetes.io/name: blinkit

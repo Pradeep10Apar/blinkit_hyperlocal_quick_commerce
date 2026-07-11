@@ -1,4 +1,7 @@
 services:
+
+  # -- Shared Infra ------------------------------------------------------
+
   postgres:
     image: postgres:16
     environment:
@@ -12,6 +15,23 @@ services:
       - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U blinkit -d blinkit"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  inventory-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+      TZ: UTC
+      PGTZ: UTC
+    command: ["postgres", "-c", "timezone=UTC"]
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory -d inventory_db"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -39,6 +59,7 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+
   redpanda:
     image: redpandadata/redpanda:latest
     command:
@@ -57,9 +78,19 @@ services:
       - --kafka-addr
       - PLAINTEXT://0.0.0.0:9092
       - --advertise-kafka-addr
-      - PLAINTEXT://localhost:9092
+      - PLAINTEXT://redpanda:9092
     ports:
       - "9092:9092"
+
+  # Kafka UI (Redpanda Console)
+  redpanda-console:
+    image: redpandadata/console:latest
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    depends_on:
+      - redpanda
 
   redis:
     image: redis:7-alpine
@@ -69,10 +100,35 @@ services:
     volumes:
       - redis-data:/data
 
-  blinkit-app:
-    build: .
+  # Redis UI
+  redis-commander:
+    image: rediscommander/redis-commander:latest
     ports:
-      - "8081:8081"
+      - "8083:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+
+  # PostgreSQL UI
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@blinkit.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
+  # -- Applications ------------------------------------------------------
+
+  blinkit-app:
+    build:
+      context: .
+      dockerfile: blinkit-app/Dockerfile
+    ports:
+      - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/blinkit
       SPRING_DATASOURCE_USERNAME: blinkit
@@ -82,11 +138,10 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       APP_ELASTIC_BASE_URL: http://elasticsearch:9200
       APP_ELASTICSEARCH_URL: http://elasticsearch:9200
-      # Images stored in named volume — survives container restarts
       BLINKIT_IMAGES_STORAGE_DIR: /app/images
       BLINKIT_IMAGES_BASE_URL: http://localhost:8080/api/images
     volumes:
-      - product-images:/app/images   # named volume — persists across restarts
+      - product-images:/app/images
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,6 +150,25 @@ services:
       redis:
         condition: service_started
 
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_HOST: inventory-postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-postgres:5432/inventory_db
+      SPRING_DATASOURCE_USERNAME: inventory
+      SPRING_DATASOURCE_PASSWORD: inventory
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+    depends_on:
+      inventory-postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+
 volumes:
-  product-images:   # Docker manages this — data survives container restarts/upgrades
+  product-images:
   redis-data:
+  pgadmin-data:

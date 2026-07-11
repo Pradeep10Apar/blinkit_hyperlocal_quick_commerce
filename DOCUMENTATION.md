@@ -13,6 +13,24 @@
 - [How to Run](#how-to-run)
 - [Useful Commands](#useful-commands)
 - [FAQs](#faqs)
+- [Microservices Architecture (Phase 2)](#microservices-architecture-phase-2)
+- [Deep Dive: Transactional Outbox Pattern](#deep-dive-transactional-outbox-pattern)
+- [Sync vs Async: Order → Inventory Communication](#sync-vs-async-order--inventory-communication)
+- [Deep Dive: Eventual Consistency](#deep-dive-eventual-consistency)
+- [Inventory Service Design](#inventory-service-design)
+- [Design Decisions & Rationale](#design-decisions--rationale)
+- [Kubernetes Deployment (Phase 3)](#kubernetes-deployment-phase-3)
+  - [Kubernetes Architecture Overview](#kubernetes-architecture-overview)
+  - [Declarative State Management](#understanding-kubernetes-declarative-state-management)
+  - [Docker Context Issues](#docker-context-issues--a-common-gotcha)
+  - [imagePullPolicy Explained](#understanding-imagepullpolicy-never)
+  - [Eureka in Kubernetes](#eureka-service-discovery-in-kubernetes)
+  - [Spring Boot Relaxed Binding](#spring-boot-relaxed-binding--how-environment-variables-map-to-properties)
+  - [Elasticsearch Timeout Fix](#elasticsearch-timeout-fix--making-configuration-dynamic)
+  - [K8s YAML Anatomy](#kubernetes-yaml-file-anatomy--line-by-line-explanation)
+  - [kubectl Context](#kubectl-context--local-vs-cloud-clusters)
+  - [AWS Production Strategy](#aws-production-deployment-strategy-conceptual)
+  - [Troubleshooting Cheat Sheet](#troubleshooting-cheat-sheet)
 
 ---
 
@@ -440,37 +458,201 @@ The app runs on `http://localhost:8080`.
 
 ---
 
-## Useful Commands
+## Useful Commands & URLs
 
-### Elasticsearch
+### 🌐 UI Dashboards
+
+| Service | URL | Credentials | Purpose |
+|---------|-----|-------------|---------|
+| **Kibana** | http://localhost:5601 | (none) | Elasticsearch dashboard, Dev Tools for queries |
+| **Redpanda Console** | http://localhost:8081 | (none) | Kafka topics, messages, consumer groups |
+| **pgAdmin** | http://localhost:5050 | `admin@blinkit.com` / `admin` | PostgreSQL database browser |
+| **Redis Commander** | http://localhost:8083 | (none) | Redis keys browser, data viewer |
+
+#### pgAdmin Server Setup (first-time)
+
+When you first open pgAdmin, add these server connections:
+
+**blinkit database:**
+| Field | Value |
+|-------|-------|
+| Name | blinkit |
+| Host | `host.docker.internal` |
+| Port | `5432` |
+| Database | `blinkit` |
+| Username | `blinkit` |
+| Password | `blinkit` |
+
+**inventory_db database:**
+| Field | Value |
+|-------|-------|
+| Name | inventory |
+| Host | `host.docker.internal` |
+| Port | `5433` |
+| Database | `inventory_db` |
+| Username | `inventory` |
+| Password | `inventory` |
+
+---
+
+### 🔗 Service URLs
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **blinkit-app** | http://localhost:8080 | Main application REST API |
+| **inventory-service** | http://localhost:8082 | Inventory microservice API |
+| **Elasticsearch** | http://localhost:9200 | Search engine REST API |
+| **Redpanda (Kafka)** | localhost:9092 | Message broker (no HTTP) |
+| **Redis** | localhost:6379 | Cache/cart storage (no HTTP) |
+| **PostgreSQL (blinkit)** | localhost:5432 | Primary database |
+| **PostgreSQL (inventory)** | localhost:5433 | Inventory database |
+
+---
+
+### 📊 Health Check URLs
+
+```bash
+# Application health
+curl.exe -s "http://localhost:8080/actuator/health"
+curl.exe -s "http://localhost:8082/actuator/health"
+
+# Elasticsearch cluster health
+curl.exe -s "http://localhost:9200/_cluster/health"
+
+# Check if services are responding
+curl.exe -s "http://localhost:9200" | Select-String "cluster_name"
+```
+
+---
+
+### 🔍 Elasticsearch Commands
+
 | What | Command |
 |---|---|
+| Cluster health | `curl.exe -s "http://localhost:9200/_cluster/health"` |
 | Count docs | `curl.exe -s "http://localhost:9200/products_v1/_count"` |
 | Get doc by ID | `curl.exe -s "http://localhost:9200/products_v1/_doc/{id}"` |
+| Search products | `curl.exe -s "http://localhost:9200/products_v1/_search?q=milk"` |
+| List all indices | `curl.exe -s "http://localhost:9200/_cat/indices?v"` |
 | Delete all docs (keep index) | `curl.exe -s -X POST "http://localhost:9200/products_v1/_delete_by_query" -H "Content-Type: application/json" -d "{\"query\":{\"match_all\":{}}}"` |
 | Delete entire index | `curl.exe -s -X DELETE "http://localhost:9200/products_v1"` |
-| List all indices | `curl.exe -s "http://localhost:9200/_cat/indices?v"` |
 
-### Docker
+---
+
+### 🐳 Docker Commands
+
 | What | Command |
 |---|---|
-| Start services | `docker compose up -d` |
+| Start all services | `docker compose up -d` |
+| Start specific service | `docker compose up -d postgres elasticsearch redis` |
+| Start UI dashboards | `docker compose up -d pgadmin redis-commander redpanda-console` |
 | Check status | `docker compose ps` |
 | View logs | `docker compose logs -f <service>` |
+| View all logs | `docker compose logs -f` |
 | Stop services | `docker compose down` |
-| **Full clean reset** | `docker compose down -v` (deletes all data!) |
+| **Full clean reset** | `docker compose down -v` (⚠️ deletes all data!) |
+| Rebuild images | `docker compose build --no-cache` |
 
-### Redis
+---
+
+### 📦 Kafka (Redpanda) Commands
+
+| What | Command |
+|---|---|
+| List topics | `docker exec -it blinkit-phase1-starter-redpanda-1 rpk topic list` |
+| Create topic | `docker exec -it blinkit-phase1-starter-redpanda-1 rpk topic create <topic-name>` |
+| Consume messages | `docker exec -it blinkit-phase1-starter-redpanda-1 rpk topic consume product-events` |
+| Describe topic | `docker exec -it blinkit-phase1-starter-redpanda-1 rpk topic describe product-events` |
+| List consumer groups | `docker exec -it blinkit-phase1-starter-redpanda-1 rpk group list` |
+| Describe consumer group | `docker exec -it blinkit-phase1-starter-redpanda-1 rpk group describe blinkit-phase1` |
+
+---
+
+### 🗄️ Redis Commands
+
 | What | Command |
 |---|---|
 | Check Redis service | `docker compose ps redis` |
 | List cart keys | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli KEYS "cart:*"` |
 | Read one cart | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli GET "cart:{cart-id}"` |
+| Delete a cart | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli DEL "cart:{cart-id}"` |
 | View Redis memory usage | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli INFO memory` |
 | Real-time Redis stats | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli --stat` |
 | Container RAM usage | `docker stats blinkit-phase1-starter-redis-1` |
 | Check AOF setting | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli CONFIG GET appendonly` |
 | Check snapshot rule | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli CONFIG GET save` |
+| Flush all data | `docker exec -it blinkit-phase1-starter-redis-1 redis-cli FLUSHALL` |
+
+---
+
+### 🐘 PostgreSQL Commands
+
+| What | Command |
+|---|---|
+| Connect to blinkit DB | `docker exec -it blinkit-phase1-starter-postgres-1 psql -U blinkit -d blinkit` |
+| Connect to inventory DB | `docker exec -it blinkit-phase1-starter-inventory-postgres-1 psql -U inventory -d inventory_db` |
+| List tables | `\dt` (inside psql) |
+| Describe table | `\d products` (inside psql) |
+| Exit psql | `\q` |
+
+**Useful SQL queries:**
+```sql
+-- Count products
+SELECT COUNT(*) FROM products;
+
+-- Check outbox events
+SELECT * FROM product_outbox ORDER BY created_at DESC LIMIT 10;
+
+-- Check pending outbox events
+SELECT * FROM product_outbox WHERE status = 'NEW';
+
+-- Check orders
+SELECT * FROM orders ORDER BY created_at DESC LIMIT 10;
+
+-- Check inventory stock
+SELECT * FROM stock ORDER BY updated_at DESC LIMIT 10;
+```
+
+---
+
+### 🚀 Application Startup
+
+```bash
+# Start infrastructure first
+docker compose up -d
+
+# Wait for services to be ready (especially Elasticsearch)
+Start-Sleep -Seconds 20
+
+# Start blinkit-app (from project root)
+mvn spring-boot:run -pl blinkit-app
+
+# Start inventory-service (in separate terminal)
+mvn spring-boot:run -pl inventory-service
+
+# OR use VS Code's Run/Debug for individual services
+```
+
+---
+
+### 🧪 API Testing (Sample cURL)
+
+```bash
+# Get all products
+curl.exe -s "http://localhost:8080/api/products" | ConvertFrom-Json
+
+# Search products
+curl.exe -s "http://localhost:8080/api/products/search?query=milk"
+
+# Get cart
+curl.exe -s "http://localhost:8080/api/cart/{cartId}"
+
+# Add to cart
+curl.exe -X POST "http://localhost:8080/api/cart/{cartId}/items" -H "Content-Type: application/json" -d "{\"productId\":\"uuid-here\",\"quantity\":2}"
+
+# Check inventory
+curl.exe -s "http://localhost:8082/api/inventory/{productId}"
+```
 
 > **Note:** In PowerShell, always use `curl.exe` (with `.exe`). Plain `curl` is aliased to `Invoke-WebRequest` which has different syntax.
 
@@ -630,4 +812,1190 @@ docker stats blinkit-phase1-starter-redis-1
 ```
 
 So yes, you can inspect it live; it’s in Redis process memory, backed by your system RAM allocation.
+---
 
+## Microservices Architecture (Phase 2)
+
+The project has been refactored from a monolith to a **multi-module microservices architecture**.
+
+### Module Structure
+
+```
+blinkit-phase1-starter/
+├── pom.xml                    # Parent POM (blinkit-parent)
+├── blinkit-app/               # Main application (Port 8080)
+│   ├── pom.xml
+│   └── src/
+└── inventory-service/         # Inventory microservice (Port 8082)
+    ├── pom.xml
+    └── src/
+```
+
+### Service Boundaries
+
+| Service | Port | Database | Responsibilities |
+|---------|------|----------|------------------|
+| **blinkit-app** | 8080 | `blinkit` (5432) | Products, Cart, Orders, Search |
+| **inventory-service** | 8082 | `inventory_db` (5433) | Stock management, Reservations |
+
+### Inter-Service Communication
+
+Services communicate via **Kafka events** (not direct HTTP calls) for loose coupling:
+
+```
+blinkit-app                         inventory-service
+     │                                     │
+     │  ORDER_PLACED                       │
+     │────────────────────────────────────►│
+     │  (Kafka: order-events)              │
+     │                                     │
+     │  ORDER_CONFIRMED / ORDER_REJECTED   │
+     │◄────────────────────────────────────│
+     │  (Kafka: inventory-events)          │
+```
+
+---
+
+## Deep Dive: Transactional Outbox Pattern
+
+### The Problem: Dual-Write Inconsistency
+
+Why can't we directly write to both PostgreSQL and Elasticsearch/Kafka in the same transaction?
+
+```java
+// ❌ DANGEROUS: Dual-write anti-pattern
+@Transactional
+public ProductEntity create(CreateProductRequest req) {
+    ProductEntity saved = repo.save(entity);      // DB write
+    elasticService.index(saved);                   // ES write - OUTSIDE transaction!
+    return saved;
+}
+```
+
+**Failure scenarios:**
+
+| Scenario | PostgreSQL | Elasticsearch | Result |
+|----------|-----------|---------------|--------|
+| Both succeed | ✅ Saved | ✅ Indexed | Happy path |
+| ES fails after DB commit | ✅ Saved | ❌ Not indexed | **Product exists but not searchable** |
+| DB rolls back after ES indexed | ❌ Rolled back | ✅ Indexed | **Ghost product in search** |
+
+**Root cause:** `@Transactional` only covers PostgreSQL operations. Elasticsearch/Kafka are external systems with no shared transaction boundary.
+
+### The Solution: Outbox Pattern
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              SINGLE POSTGRESQL TRANSACTION                  │
+│                                                             │
+│   INSERT INTO products (...)                                │
+│   INSERT INTO product_outbox (status='NEW', ...)            │
+│                                                             │
+│        ✅ BOTH SUCCEED OR BOTH FAIL (ACID GUARANTEED)       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ @Scheduled (1 second polling)
+                              ▼
+                 ┌─────────────────────────┐
+                 │ ProductOutboxPublisher  │
+                 │  (Polls for NEW rows)   │
+                 └───────────┬─────────────┘
+                             │
+                             ▼
+                 ┌─────────────────────────┐
+                 │   Kafka: product-events │
+                 └───────────┬─────────────┘
+                             │
+                             ▼
+                 ┌─────────────────────────┐
+                 │  ProductIndexConsumer   │
+                 │  → Elasticsearch        │
+                 └─────────────────────────┘
+```
+
+**Guarantees:**
+- **Atomicity:** Product and outbox event are saved together or not at all
+- **Durability:** If app crashes, event stays `NEW` and is picked up on restart
+- **At-least-once delivery:** Event is retried until successfully published
+- **Resilience:** Kafka/ES outages don't break product creation
+
+### Why Order Also Uses Outbox Pattern
+
+Orders use the outbox pattern for **non-critical downstream notifications**, but stock reservation is handled **synchronously** (see [Sync vs Async Decision](#sync-vs-async-order--inventory-communication)).
+
+```
+ORDER_CONFIRMED event consumers (ASYNC - non-critical):
+├── notification-service → Send SMS/Email (future)
+├── analytics-service    → Update dashboards (future)
+└── delivery-service     → Assign rider (future)
+```
+
+**Note:** Stock reservation is NOT done via events. It's a synchronous HTTP call because user needs immediate feedback.
+
+---
+
+## Sync vs Async: Order → Inventory Communication
+
+### The Problem with Fully Async Stock Check
+
+```
+❌ WRONG: Fully Async Design
+───────────────────────────
+
+User clicks "Place Order"
+         │
+         ▼
+┌─────────────────┐
+│ OrderService    │
+│ • Save order    │
+│ • Clear cart    │
+│ • Return 201 ✅ │  ──────►  "Order Placed Successfully!" 
+└────────┬────────┘            (User is HAPPY 😊)
+         │
+         │  ~1-2 seconds later (async event)
+         ▼
+┌─────────────────┐
+│ InventoryService│
+│ • Check stock   │
+│ • INSUFFICIENT! │  ──────►  "Sorry, order cancelled" 😠
+└─────────────────┘            (User is ANGRY - false promise!)
+```
+
+**This is terrible UX!** User was told order was placed, cart was cleared, then later told it's cancelled.
+
+### The Correct Hybrid Design
+
+```
+✅ CORRECT: Sync for Critical Path + Async for Notifications
+─────────────────────────────────────────────────────────────
+
+User clicks "Place Order"
+         │
+         ▼
+┌─────────────────┐      SYNC HTTP (WebClient)      ┌─────────────────┐
+│ OrderService    │ ────────────────────────────────► │ InventoryService│
+│                 │  POST /api/stock/reserve         │                 │
+│                 │  {orderId, items:[...]}          │ • Check stock   │
+│                 │                                  │ • Reserve if OK │
+│                 │ ◄──────────────────────────────── │                 │
+│                 │  {success: true/false,           │                 │
+└────────┬────────┘   reservedItems: [...]}          └─────────────────┘
+         │
+         ├── IF reserved successfully:
+         │   ├── Save order (status=CONFIRMED)
+         │   ├── Save outbox (ORDER_CONFIRMED) → async notifications
+         │   ├── Clear cart
+         │   └── Return 201 "Order confirmed!" ✅
+         │
+         └── IF reservation failed:
+             ├── DON'T save order
+             ├── DON'T clear cart
+             └── Return 400 "Insufficient stock" ❌ (immediate feedback)
+```
+
+### Why Sync for Stock Reservation?
+
+| Aspect | Fully Async (Wrong) | Sync Reservation (Correct) |
+|--------|---------------------|----------------------------|
+| User feedback | "Placed!" then later "Cancelled" | Immediate success/failure |
+| Trust | Broken (false promise) | Maintained (honest) |
+| Cart | Already cleared on failure | Still intact, user can retry |
+| Inventory down | Accept order blindly (risky!) | Fail fast, don't accept |
+
+### When to Use Sync vs Async
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                    SYNC vs ASYNC - CORRECT USE CASES                            │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  SYNC (Critical Path - User needs immediate feedback):                          │
+│  ─────────────────────────────────────────────────────                          │
+│  • Stock reservation    ← Must know if items available                          │
+│  • Payment processing   ← Can't confirm without payment                         │
+│  • User authentication  ← Can't proceed without login                           │
+│                                                                                 │
+│  ASYNC (Non-Critical - Can happen in background):                               │
+│  ────────────────────────────────────────────────                               │
+│  • Send SMS/Email       ← 5 second delay is acceptable                          │
+│  • Update analytics     ← Dashboard can be eventual                             │
+│  • Notify delivery      ← Rider assignment can wait                             │
+│  • Sync to ES           ← Search lag is acceptable                              │
+│  • Generate invoice PDF ← Can be emailed later                                  │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Trade-offs Acknowledged
+
+| Trade-off | Our Choice | Reason |
+|-----------|------------|--------|
+| Latency | +50-100ms for HTTP call | Acceptable for accurate feedback |
+| Availability | If inventory down → orders fail | Better than false promises |
+| Coupling | OrderService knows InventoryService | Acceptable for critical path |
+| Complexity | Need timeout, retry, circuit breaker | Worth it for correctness |
+
+---
+
+## Deep Dive: Eventual Consistency
+
+### Definition
+
+> *"If no new updates are made, eventually all reads will return the same value."*
+
+In this system, there's a **1-2 second window** where PostgreSQL and Elasticsearch/Inventory may have different data.
+
+### Consistency Models Spectrum
+
+```
+STRONG CONSISTENCY                              EVENTUAL CONSISTENCY
+       │                                                │
+       ▼                                                ▼
+┌─────────────────┐                           ┌─────────────────┐
+│ • Single DB     │                           │ • Outbox pattern│
+│ • 2-Phase Commit│                           │ • Event-driven  │
+│ • All nodes see │                           │ • Async replica │
+│   same data     │                           │   -tion         │
+│   instantly     │                           │                 │
+├─────────────────┤                           ├─────────────────┤
+│ Pros:           │                           │ Pros:           │
+│ • Always correct│                           │ • High available│
+│ • Simple logic  │                           │ • Scalable      │
+│                 │                           │ • Fault tolerant│
+├─────────────────┤                           ├─────────────────┤
+│ Cons:           │                           │ Cons:           │
+│ • Slow          │                           │ • Temporary     │
+│ • Single point  │                           │   inconsistency │
+│   of failure    │                           │ • Complex logic │
+└─────────────────┘                           └─────────────────┘
+```
+
+### CAP Theorem Trade-off
+
+This system uses a **hybrid approach**:
+- **Stock reservation:** Synchronous (consistency over availability)
+- **Notifications/Analytics:** Eventual consistency (availability over consistency)
+
+For the critical order path, we choose **CP** (Consistency + Partition Tolerance):
+- **Consistent:** Stock check happens before order confirmation
+- **Partition Tolerant:** Services on different networks
+- **Not Always Available:** If inventory-service down, orders fail (acceptable trade-off)
+
+### When is Eventual Consistency Acceptable?
+
+| ✅ Acceptable (Async) | ❌ Not Acceptable (Must be Sync) |
+|-----------------------|----------------------------------|
+| Product search (ES lags 1s) | Stock reservation (user needs feedback) |
+| SMS/Email notifications | Payment processing |
+| Analytics dashboards | Booking a seat (can't double-book) |
+| Delivery assignment | Bank transfers |
+
+---
+
+## Inventory Service Design
+
+### Stock Table Schema
+
+```sql
+CREATE TABLE stock (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id      UUID        NOT NULL UNIQUE,   -- 1:1 with product
+    quantity        INT         NOT NULL DEFAULT 0, -- available stock
+    reserved        INT         NOT NULL DEFAULT 0, -- reserved during order
+    warehouse       VARCHAR(120) NOT NULL DEFAULT 'DEFAULT',
+    created_at      TIMESTAMP   NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP   NOT NULL DEFAULT now()
+);
+```
+
+### Stock Lifecycle
+
+```
+1. PRODUCT CREATED (catalog)
+   └─► Stock entry created (qty=0, reserved=0)
+       [ProductStockConsumer listens to product-events - ASYNC]
+
+2. WAREHOUSE REPLENISHMENT (physical goods arrive)
+   └─► Staff adds inventory via API (qty=100)
+       [POST /api/stock/{productId}/replenish]
+
+3. ORDER PLACEMENT (user clicks "Place Order")
+   └─► SYNC call: Reserve stock (quantity -= orderQty, reserved += orderQty)
+       [POST /api/stock/reserve - must succeed before order is created]
+
+4. ORDER CONFIRMED (reservation successful)
+   └─► Commit reservation (reserved -= orderQty)
+       [Stock already deducted in step 3]
+
+5. ORDER CANCELLED / PAYMENT FAILED
+   └─► Release reservation (quantity += reservedQty, reserved -= reservedQty)
+       [POST /api/stock/release]
+```
+
+### Order Processing Scenarios
+
+**Scenario 1: Full Inventory Available**
+```
+Order: Product A (5 units)
+Stock: Product A (100 available)
+Sync Call: POST /api/stock/reserve → {success: true}
+Result: Order CONFIRMED, user sees success immediately
+```
+
+**Scenario 2: Partial Inventory**
+```
+Order: Product A (5 units), Product B (3 units)
+Stock: Product A (5), Product B (1)
+Sync Call: POST /api/stock/reserve → {success: false, available: {A:5, B:1}}
+Result: Order NOT created, user sees "Only 1 unit of Product B available"
+        Cart NOT cleared, user can adjust and retry
+```
+
+**Scenario 3: No Inventory**
+```
+Order: Product A (5 units)
+Stock: Product A (0 available)
+Sync Call: POST /api/stock/reserve → {success: false, reason: "OUT_OF_STOCK"}
+Result: Order NOT created, user sees "Product A is out of stock"
+        Cart NOT cleared, user can remove item and retry
+```
+
+### Corrected Event Flow (Sync + Async Hybrid)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    COMPLETE ORDER FLOW (CORRECTED)                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  POST /api/orders?cartId=xyz                                           │
+│           │                                                             │
+│           ▼                                                             │
+│  OrderService                                                           │
+│    │                                                                    │
+│    ├── 1. Get cart from Redis                                           │
+│    │                                                                    │
+│    ├── 2. SYNC HTTP call to inventory-service (WebClient)               │
+│    │      POST /api/stock/reserve                                       │
+│    │      {orderId: "...", items: [{productId, qty}, ...]}             │
+│    │           │                                                        │
+│    │           ▼                                                        │
+│    │      ┌─────────────────────────────────────┐                      │
+│    │      │ InventoryService                    │                      │
+│    │      │ • Check stock for each item         │                      │
+│    │      │ • If ALL available:                 │                      │
+│    │      │   - Deduct: quantity -= orderQty    │                      │
+│    │      │   - Return {success: true}          │                      │
+│    │      │ • If ANY unavailable:               │                      │
+│    │      │   - Don't deduct anything           │                      │
+│    │      │   - Return {success: false, ...}    │                      │
+│    │      └─────────────────────────────────────┘                      │
+│    │           │                                                        │
+│    │           ▼                                                        │
+│    ├── 3. IF reservation FAILED:                                        │
+│    │      └── Return 400 "Insufficient stock" (cart NOT cleared)        │
+│    │                                                                    │
+│    ├── 4. IF reservation SUCCEEDED:                                     │
+│    │      ├── Save order (status=CONFIRMED)                             │
+│    │      ├── Save order_outbox (ORDER_CONFIRMED)                       │
+│    │      ├── Clear cart                                                │
+│    │      └── Return 201 "Order confirmed!"                             │
+│    │                                                                    │
+│           │ ~1 second (outbox polling) - ASYNC from here                │
+│           ▼                                                             │
+│  Kafka: order-events {ORDER_CONFIRMED, orderId, ...}                   │
+│           │                                                             │
+│           ├──────────────────┬──────────────────┐                      │
+│           ▼                  ▼                  ▼                      │
+│  notification-svc     analytics-svc      delivery-svc                  │
+│  (send SMS/email)     (update dashboard) (assign rider)                │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Kafka Topics (Updated)
+
+| Topic | Publisher | Consumers | Event Types |
+|-------|-----------|-----------|-------------|
+| `product-events` | blinkit-app | ProductIndexConsumer (ES), ProductStockConsumer (inventory) | PRODUCT_UPSERTED |
+| `order-events` | blinkit-app | NotificationService, AnalyticsService (future) | ORDER_CONFIRMED, ORDER_CANCELLED |
+
+**Note:** `inventory-service` is no longer a Kafka consumer for orders. Stock reservation is done via synchronous HTTP.
+
+---
+
+## Kubernetes Deployment (Phase 3)
+
+This section documents the Kubernetes deployment learnings from setting up the microservices on local K3s (Rancher Desktop).
+
+---
+
+### Kubernetes Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         KUBERNETES CLUSTER (K3s / Rancher Desktop)              │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│   ┌─────────────────────────────────────────────────────────────────────────┐  │
+│   │                        NAMESPACE: blinkit                                │  │
+│   ├─────────────────────────────────────────────────────────────────────────┤  │
+│   │                                                                         │  │
+│   │   ┌───────────────────────────────────────────────────────────────┐    │  │
+│   │   │              INFRASTRUCTURE LAYER (StatefulSets)               │    │  │
+│   │   │                                                                │    │  │
+│   │   │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │    │  │
+│   │   │   │  PostgreSQL │  │  PostgreSQL │  │    Redis    │          │    │  │
+│   │   │   │   (blinkit) │  │ (inventory) │  │             │          │    │  │
+│   │   │   │   :5432     │  │   :5433     │  │   :6379     │          │    │  │
+│   │   │   └─────────────┘  └─────────────┘  └─────────────┘          │    │  │
+│   │   │                                                                │    │  │
+│   │   │   ┌─────────────┐  ┌─────────────┐                           │    │  │
+│   │   │   │Elasticsearch│  │  Redpanda   │                           │    │  │
+│   │   │   │   :9200     │  │(Kafka):9092 │                           │    │  │
+│   │   │   └─────────────┘  └─────────────┘                           │    │  │
+│   │   └───────────────────────────────────────────────────────────────┘    │  │
+│   │                                                                         │  │
+│   │   ┌───────────────────────────────────────────────────────────────┐    │  │
+│   │   │              APPLICATION LAYER (Deployments + HPA)             │    │  │
+│   │   │                                                                │    │  │
+│   │   │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │    │  │
+│   │   │   │   Eureka    │  │ API Gateway │  │ blinkit-app │          │    │  │
+│   │   │   │   :8761     │  │   :8085     │  │   :8080     │          │    │  │
+│   │   │   └─────────────┘  └─────────────┘  └─────────────┘          │    │  │
+│   │   │                                                                │    │  │
+│   │   │   ┌─────────────┐                                             │    │  │
+│   │   │   │ inventory-  │                                             │    │  │
+│   │   │   │  service    │                                             │    │  │
+│   │   │   │   :8082     │                                             │    │  │
+│   │   │   └─────────────┘                                             │    │  │
+│   │   └───────────────────────────────────────────────────────────────┘    │  │
+│   │                                                                         │  │
+│   │   ┌───────────────────────────────────────────────────────────────┐    │  │
+│   │   │              EXTERNAL ACCESS (NodePort)                        │    │  │
+│   │   │                                                                │    │  │
+│   │   │   localhost:30085 ──► API Gateway ──► blinkit-app/inventory   │    │  │
+│   │   │                                                                │    │  │
+│   │   └───────────────────────────────────────────────────────────────┘    │  │
+│   │                                                                         │  │
+│   └─────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Understanding Kubernetes Declarative State Management
+
+#### Why Do Pods Auto-Restart After Rancher Desktop Restart?
+
+**The Question:**
+> "I restarted Rancher Desktop and all my pods came back automatically. I never ran `kubectl apply` again!"
+
+**The Answer — Kubernetes Self-Healing:**
+
+Kubernetes uses a **declarative model**, not an imperative one:
+
+| Approach | How It Works | Example |
+|----------|--------------|---------|
+| **Imperative** | "Do this action NOW" | `docker run nginx` |
+| **Declarative** | "Make sure this state EXISTS" | `kubectl apply -f deployment.yaml` |
+
+When you `kubectl apply`, Kubernetes stores your **desired state** in etcd (its database). The **control plane** constantly monitors the cluster:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    KUBERNETES CONTROL LOOP                   │
+│                                                              │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
+│   │ etcd stores │    │  Scheduler  │    │  Kubelet    │    │
+│   │ "I want 3   │───►│  "Node-1    │───►│  "Start     │    │
+│   │  nginx pods"│    │  has room"  │    │  container" │    │
+│   └─────────────┘    └─────────────┘    └─────────────┘    │
+│          │                                      │           │
+│          │         Compare                      │           │
+│          ▼         desired vs actual            ▼           │
+│   ┌─────────────────────────────────────────────────┐      │
+│   │          RECONCILIATION LOOP                     │      │
+│   │  "Desired: 3 pods" vs "Actual: 2 pods"          │      │
+│   │   → Action: Create 1 more pod                    │      │
+│   └─────────────────────────────────────────────────┘      │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**After Rancher Desktop restart:**
+1. K3s control plane starts
+2. Reads desired state from etcd ("12 pods should exist")
+3. Checks actual state (0 pods running)
+4. Creates all 12 pods to match desired state
+
+**Analogy:** Kubernetes is like a thermostat. You set desired temperature (68°F), and it constantly adjusts AC/heating to maintain it — you don't tell it "turn on AC now", you tell it "keep it 68°F".
+
+---
+
+### Docker Context Issues — A Common Gotcha
+
+#### The Problem: "My images are gone!"
+
+After Rancher Desktop restart, pods showed `ErrImageNeverPull`:
+```
+blinkit-app-6f8c8f4b6c-xxxxx   0/1   ErrImageNeverPull   0   5m
+```
+
+#### Root Cause: Multiple Docker Contexts
+
+Docker CLI can connect to **different Docker daemons**. Rancher Desktop creates its own:
+
+```bash
+> docker context ls
+
+NAME              DESCRIPTION                    DOCKER ENDPOINT
+default           Current DOCKER_HOST based...   npipe:////./pipe/docker_engine
+desktop-linux     Docker Desktop                 npipe:////./pipe/dockerDesktopLinuxEngine
+rancher-desktop * Rancher Desktop moby context   npipe:////./pipe/dockerDesktopLinuxEngine
+```
+
+| Context | Where Images Go | Used By |
+|---------|-----------------|---------|
+| `default` | Docker Desktop's storage | Docker Desktop |
+| `desktop-linux` | Docker Desktop's VM | Docker Desktop |
+| `rancher-desktop` | K3s's containerd | K3s/Kubernetes |
+
+**If you build in wrong context:**
+```bash
+# ❌ WRONG: Builds to Docker Desktop, not K3s
+docker build -t blinkit-app:v1 .
+
+# ✅ CORRECT: Ensure rancher-desktop context first
+docker context use rancher-desktop
+docker build -t blinkit-app:v1 .
+```
+
+#### The Fix
+
+```bash
+# 1. Check current context
+docker context ls
+
+# 2. Switch to rancher-desktop
+docker context use rancher-desktop
+
+# 3. Rebuild all images
+docker build --no-cache -t eureka:v1 ./eureka/
+docker build --no-cache -t api-gateway:v1 ./api-gateway/
+docker build --no-cache -t blinkit-app:v1 ./blinkit-app/
+docker build --no-cache -t inventory-service:v1 ./inventory-service/
+
+# 4. Restart deployments to pick up new images
+kubectl rollout restart deployment eureka api-gateway blinkit-app inventory-service -n blinkit
+```
+
+---
+
+### Understanding `imagePullPolicy: Never`
+
+In our K8s YAML files, we use:
+
+```yaml
+containers:
+- name: blinkit-app
+  image: blinkit-app:v1
+  imagePullPolicy: Never  # ← What does this mean?
+```
+
+| imagePullPolicy | Behavior | Use Case |
+|-----------------|----------|----------|
+| `Always` | Pull from registry every time | Production (ECR, DockerHub) |
+| `IfNotPresent` | Pull only if not in local cache | Reduce bandwidth |
+| **`Never`** | **Never pull, use local only** | **Local dev with K3s** |
+
+**Why `Never` for local development?**
+- Images are built directly into K3s's containerd
+- No registry involved (no DockerHub/ECR)
+- If image doesn't exist locally → `ErrImageNeverPull` (intentional — tells you to build first!)
+
+---
+
+### Eureka Service Discovery in Kubernetes
+
+#### The Problem: Services Couldn't Find Each Other
+
+After deploying to K8s, API Gateway logged:
+```
+Request failed... host: blinkit-app-7c8d6f5b4d-xxxxx
+java.net.UnknownHostException: blinkit-app-7c8d6f5b4d-xxxxx
+```
+
+#### Root Cause: Pods Registering with Hostnames
+
+By default, Eureka instances register with their **hostname**. In Kubernetes, pod hostnames are generated names like `blinkit-app-7c8d6f5b4d-xxxxx`.
+
+**The problem:** Other services can't resolve these hostnames because Kubernetes DNS only knows **service names**, not individual pod names.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    EUREKA REGISTRATION                       │
+│                                                              │
+│   DEFAULT BEHAVIOR (❌ BROKEN in K8s):                      │
+│   ┌─────────────────┐    ┌───────────────────────────┐     │
+│   │   blinkit-app   │───►│ Eureka: "I'm at hostname  │     │
+│   │   (Pod)         │    │ blinkit-app-7c8d6f5b4d"   │     │
+│   └─────────────────┘    └───────────────────────────┘     │
+│                                │                            │
+│                                ▼                            │
+│   ┌─────────────────┐    ┌───────────────────────────┐     │
+│   │   API Gateway   │◄───│ "Connect to hostname:     │     │
+│   │   (tries to     │    │  blinkit-app-7c8d6f5b4d"  │     │
+│   │   connect)      │    └───────────────────────────┘     │
+│   └─────────────────┘              │                        │
+│          │                         │                        │
+│          ▼                         │                        │
+│   ❌ UnknownHostException         ❌ DNS can't resolve     │
+│      (K8s DNS doesn't                pod names!             │
+│       know pod names)                                       │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### The Fix: Register with IP Address
+
+Add this environment variable to ALL Spring services:
+
+```yaml
+# In ConfigMap
+EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+```
+
+**What it does:**
+
+```
+WITH prefer-ip-address=true (✅ WORKS):
+
+┌─────────────────┐    ┌───────────────────────────┐
+│   blinkit-app   │───►│ Eureka: "I'm at IP        │
+│   (Pod IP:      │    │ 10.42.0.15:8080"          │
+│   10.42.0.15)   │    └───────────────────────────┘
+└─────────────────┘              │
+                                 ▼
+┌─────────────────┐    ┌───────────────────────────┐
+│   API Gateway   │◄───│ "Connect to 10.42.0.15"   │
+│                 │    └───────────────────────────┘
+└─────────────────┘
+         │
+         ▼
+✅ Direct IP connection works!
+```
+
+---
+
+### Spring Boot Relaxed Binding — How Environment Variables Map to Properties
+
+#### The Pattern
+
+Spring Boot uses **relaxed binding** to convert environment variables to property names:
+
+```
+Environment Variable    →    Property Name
+─────────────────────────────────────────────
+APP_ELASTICSEARCH_URL   →    app.elasticsearch.url
+APP_ELASTIC_BASE_URL    →    app.elastic.base-url
+SPRING_DATASOURCE_URL   →    spring.datasource.url
+```
+
+**Conversion rules:**
+1. Replace `_` with `.`
+2. Convert to lowercase
+3. Handle special cases (`BASEURL` → `base-url`)
+
+#### Real Example from This Project
+
+**ConfigMap (environment variable):**
+```yaml
+data:
+  APP_ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  APP_ELASTIC_BASE_URL: "http://elasticsearch:9200"
+```
+
+**application.yml (how Spring reads it):**
+```yaml
+app:
+  elasticsearch:
+    url: ${APP_ELASTICSEARCH_URL:http://localhost:9200}
+  elastic:
+    base-url: ${APP_ELASTIC_BASE_URL:http://localhost:9200}
+```
+
+**Java code (how you use it):**
+```java
+@ConfigurationProperties(prefix = "app.elastic")
+public record ElasticProperties(
+    String baseUrl,        // ← Maps from APP_ELASTIC_BASE_URL
+    String index,
+    int timeoutSeconds     // ← Maps from APP_ELASTIC_TIMEOUT_SECONDS
+) {}
+```
+
+---
+
+### Elasticsearch Timeout Fix — Making Configuration Dynamic
+
+#### The Problem
+
+In Docker Compose, Elasticsearch starts in ~3 seconds. In Kubernetes, it can take 10-15 seconds (resource limits, startup probes, etc.). The hardcoded 3-second timeout caused:
+
+```
+Error: java.util.concurrent.TimeoutException: Did not observe any item 
+       or terminal signal within 3000ms
+```
+
+#### The Fix: Configurable Timeout
+
+**1. Update ElasticProperties.java:**
+```java
+@ConfigurationProperties(prefix = "app.elastic")
+public record ElasticProperties(
+    String baseUrl, 
+    String index,
+    int timeoutSeconds  // NEW: configurable timeout
+) {}
+```
+
+**2. Update application.yml:**
+```yaml
+app:
+  elastic:
+    base-url: ${APP_ELASTIC_BASE_URL:http://localhost:9200}
+    index: products_v1
+    timeout-seconds: ${APP_ELASTIC_TIMEOUT_SECONDS:10}  # Default 10s
+```
+
+**3. Update ElasticIndexService.java:**
+```java
+public void ensureIndexExists() {
+    int timeout = props.timeoutSeconds() > 0 ? props.timeoutSeconds() : 10;
+    
+    webClient.get()
+        .uri("/{index}", props.index())
+        .retrieve()
+        .toBodilessEntity()
+        .timeout(Duration.ofSeconds(timeout))  // Use configurable timeout
+        .block();
+}
+```
+
+**4. ConfigMap in K8s (optional override):**
+```yaml
+data:
+  APP_ELASTIC_TIMEOUT_SECONDS: "15"  # Override if needed
+```
+
+---
+
+### Kubernetes YAML File Anatomy — Line-by-Line Explanation
+
+A complete K8s service definition has **4 parts**: ConfigMap, Deployment, Service, HPA.
+
+#### Part 1: ConfigMap (Environment Variables)
+
+```yaml
+apiVersion: v1                    # K8s API version for ConfigMap
+kind: ConfigMap                   # Resource type
+metadata:
+  name: blinkit-app-config        # Name to reference this ConfigMap
+  namespace: blinkit              # Namespace isolation
+data:                             # Key-value pairs (all strings!)
+  SPRING_PROFILES_ACTIVE: "k8s"   # Activates k8s profile
+  SERVER_PORT: "8080"             # Port app listens on
+  APP_ELASTIC_BASE_URL: "http://elasticsearch:9200"  # ES connection
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"          # Fix for K8s DNS
+```
+
+**Why ConfigMap?**
+- Separates configuration from code
+- Can change config without rebuilding image
+- Shared across pods
+
+---
+
+#### Part 2: Deployment (Pod Template + Replicas)
+
+```yaml
+apiVersion: apps/v1               # API version for Deployments
+kind: Deployment                  # Creates and manages pods
+metadata:
+  name: blinkit-app               # Deployment name
+  namespace: blinkit
+spec:
+  replicas: 2                     # How many identical pods to run
+  selector:
+    matchLabels:
+      app: blinkit-app            # Finds pods with this label
+  template:                       # Pod template - what each pod looks like
+    metadata:
+      labels:
+        app: blinkit-app          # Label pods for Service to find them
+    spec:
+      containers:
+      - name: blinkit-app
+        image: blinkit-app:v1     # Docker image to use
+        imagePullPolicy: Never    # Don't pull from registry (local only)
+        ports:
+        - containerPort: 8080     # Container exposes this port
+        envFrom:
+        - configMapRef:
+            name: blinkit-app-config   # Inject ALL keys from ConfigMap
+        - secretRef:
+            name: blinkit-app-secrets  # Inject ALL keys from Secret
+        resources:
+          requests:               # Minimum resources guaranteed
+            memory: "256Mi"
+            cpu: "100m"           # 0.1 CPU cores
+          limits:                 # Maximum resources allowed
+            memory: "512Mi"
+            cpu: "500m"           # 0.5 CPU cores
+        readinessProbe:           # Is pod ready to receive traffic?
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:            # Should K8s restart this pod?
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 15
+```
+
+**Key Concepts:**
+
+| Concept | What It Does | Analogy |
+|---------|--------------|---------|
+| `replicas: 2` | Run 2 identical pods | 2 cashiers at checkout |
+| `selector.matchLabels` | How Deployment finds its pods | Employee badge |
+| `envFrom.configMapRef` | Inject env vars from ConfigMap | Loading .env file |
+| `resources.requests` | Minimum guaranteed resources | Reserved parking spot |
+| `resources.limits` | Maximum allowed resources | Speed limit |
+| `readinessProbe` | Is pod ready for traffic? | "Open" sign on store |
+| `livenessProbe` | Is pod alive? (restart if not) | Heart monitor |
+
+---
+
+#### Part 3: Service (Stable Network Endpoint)
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: blinkit-app               # Service name = DNS name!
+  namespace: blinkit
+spec:
+  selector:
+    app: blinkit-app              # Route traffic to pods with this label
+  ports:
+  - port: 8080                    # Port the Service listens on
+    targetPort: 8080              # Port on the container
+  type: ClusterIP                 # Only accessible inside cluster
+```
+
+**Service Types:**
+
+| Type | Accessibility | Use Case |
+|------|---------------|----------|
+| `ClusterIP` | Inside cluster only | Internal services |
+| `NodePort` | Outside via node IP:port | Dev/testing access |
+| `LoadBalancer` | External load balancer | Production (cloud) |
+
+**Why Service?**
+- Pods are ephemeral (IP changes on restart)
+- Service provides stable DNS name: `blinkit-app.blinkit.svc.cluster.local`
+- Load balances across all matching pods
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SERVICE LOAD BALANCING                    │
+│                                                              │
+│   Request to "blinkit-app:8080"                             │
+│           │                                                  │
+│           ▼                                                  │
+│   ┌───────────────┐                                         │
+│   │   Service     │                                         │
+│   │  blinkit-app  │                                         │
+│   └───────┬───────┘                                         │
+│           │                                                  │
+│     ┌─────┼─────┐                                           │
+│     ▼     ▼     ▼                                           │
+│   ┌───┐ ┌───┐ ┌───┐                                         │
+│   │Pod│ │Pod│ │Pod│  (labels: app=blinkit-app)              │
+│   │ 1 │ │ 2 │ │ 3 │                                         │
+│   └───┘ └───┘ └───┘                                         │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### Part 4: HorizontalPodAutoscaler (Auto-scaling)
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: blinkit-app-hpa
+  namespace: blinkit
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: blinkit-app             # Which Deployment to scale
+  minReplicas: 1                  # Minimum pods (even at 0 load)
+  maxReplicas: 5                  # Maximum pods (cost control)
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70    # Scale up if CPU > 70%
+```
+
+**How It Works:**
+```
+CPU at 30%  →  1 pod (minReplicas)
+CPU at 75%  →  Scale up! Now 2 pods
+CPU at 80%  →  Scale up! Now 3 pods
+CPU drops to 40%  →  Scale down to 2 pods
+```
+
+---
+
+### kubectl Context — Local vs Cloud Clusters
+
+#### The Problem: "I'm seeing AWS resources!"
+
+```bash
+> kubectl get pods
+NAME                           READY   STATUS    RESTARTS   AGE
+aws-load-balancer-controller   1/1     Running   0          5d
+coredns-7b9f8c6d8b-xxxxx       1/1     Running   0          5d
+```
+
+**Wait, I'm working locally! Why am I seeing AWS pods?**
+
+#### Root Cause: Wrong kubectl Context
+
+kubectl can connect to multiple clusters. It uses **contexts** to know which one:
+
+```bash
+> kubectl config get-contexts
+
+CURRENT   NAME                                      CLUSTER
+          arn:aws:eks:us-east-1:123:cluster/prod    aws-prod-cluster
+*         rancher-desktop                           rancher-desktop
+```
+
+The `*` shows current context. If you previously connected to AWS EKS, that context might still be active!
+
+#### The Fix
+
+```bash
+# See all contexts
+kubectl config get-contexts
+
+# Switch to local
+kubectl config use-context rancher-desktop
+
+# Verify
+kubectl config current-context
+# Output: rancher-desktop
+```
+
+---
+
+### AWS Production Deployment Strategy (Conceptual)
+
+#### How Would We Deploy to AWS?
+
+**Architecture Change:**
+
+| Aspect | Local (K3s) | Production (AWS EKS) |
+|--------|-------------|----------------------|
+| Image Storage | Local containerd | Amazon ECR |
+| Cluster | Single-node K3s | Multi-node EKS |
+| `imagePullPolicy` | `Never` | `Always` |
+| Database | In-cluster pods | Amazon RDS |
+| Load Balancer | NodePort | AWS ALB |
+| Secrets | K8s Secrets | AWS Secrets Manager |
+
+**CI/CD Pipeline Flow:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PRODUCTION CI/CD                          │
+│                                                              │
+│   Git Push                                                   │
+│       │                                                      │
+│       ▼                                                      │
+│   GitHub Actions                                             │
+│       │                                                      │
+│       ├── 1. Build Docker images                             │
+│       │                                                      │
+│       ├── 2. Push to Amazon ECR                              │
+│       │      aws ecr get-login-password | docker login       │
+│       │      docker push 123456789.dkr.ecr.../blinkit-app   │
+│       │                                                      │
+│       ├── 3. Update K8s manifests (new image tag)           │
+│       │                                                      │
+│       └── 4. kubectl apply -f k8s/prod/                      │
+│              (or ArgoCD sync)                                │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Production YAML Changes:**
+
+```yaml
+# k8s/prod/11-blinkit-app.yaml
+spec:
+  containers:
+  - name: blinkit-app
+    image: 123456789.dkr.ecr.us-east-1.amazonaws.com/blinkit-app:v1.2.3
+    imagePullPolicy: Always   # ← Changed from Never
+```
+
+---
+
+### Troubleshooting Cheat Sheet
+
+| Symptom | Likely Cause | Fix |
+|---------|--------------|-----|
+| `ErrImageNeverPull` | Image not in K3s containerd | Build with correct Docker context |
+| `ImagePullBackOff` | Can't pull from registry | Check registry credentials / image name |
+| `CrashLoopBackOff` | App crashing on startup | Check logs: `kubectl logs <pod>` |
+| `UnknownHostException` | Eureka hostname issue | Add `EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"` |
+| `Connection refused` | Service not ready | Check readinessProbe, wait for startup |
+| Pods in `Pending` | No node has enough resources | Check `kubectl describe pod` for events |
+| Timeout errors | Network/DNS issues | Check service names, increase timeouts |
+| Wrong cluster resources | kubectl context wrong | `kubectl config use-context rancher-desktop` |
+
+---
+
+### Useful Kubernetes Commands
+
+```bash
+# === CLUSTER INFO ===
+kubectl cluster-info                     # Is cluster running?
+kubectl config current-context           # Which cluster am I connected to?
+kubectl config get-contexts              # List all contexts
+kubectl config use-context rancher-desktop  # Switch context
+
+# === NAMESPACE ===
+kubectl get namespaces                   # List all namespaces
+kubectl create namespace blinkit         # Create namespace
+
+# === DEPLOYMENTS ===
+kubectl get deployments -n blinkit       # List deployments
+kubectl rollout status deployment/blinkit-app -n blinkit  # Watch rollout
+kubectl rollout restart deployment/blinkit-app -n blinkit # Restart pods
+
+# === PODS ===
+kubectl get pods -n blinkit              # List pods
+kubectl get pods -n blinkit -o wide      # Show IPs and nodes
+kubectl describe pod <pod-name> -n blinkit  # Detailed info + events
+kubectl logs <pod-name> -n blinkit       # View logs
+kubectl logs <pod-name> -n blinkit -f    # Follow logs (tail -f)
+kubectl exec -it <pod-name> -n blinkit -- /bin/sh  # Shell into pod
+
+# === SERVICES ===
+kubectl get svc -n blinkit               # List services
+kubectl describe svc api-gateway -n blinkit  # Service details
+
+# === APPLY / DELETE ===
+kubectl apply -f k8s/ -n blinkit         # Apply all YAML files
+kubectl delete -f k8s/ -n blinkit        # Delete all resources
+kubectl apply -f 11-blinkit-app.yaml -n blinkit  # Apply single file
+
+# === DEBUG ===
+kubectl get events -n blinkit --sort-by='.lastTimestamp'  # Recent events
+kubectl top pods -n blinkit              # CPU/Memory usage (needs metrics-server)
+```
+
+---
+
+## Design Decisions & Rationale
+
+### Why Not SKU in Stock Table?
+
+**SKU (Stock Keeping Unit)** is a human-readable product identifier (e.g., `AMUL-BTR-100G`).
+
+| Use Case | product_id (UUID) | SKU |
+|----------|-------------------|-----|
+| Database foreign keys | ✅ Perfect | ❌ Avoid |
+| Barcode scanning | ❌ Can't scan | ✅ Scannable |
+| Warehouse reports | ❌ Unreadable | ✅ Human-friendly |
+
+**Decision:** For this learning project, `product_id` (UUID) is sufficient. SKU can be added later for warehouse features.
+
+### Why Stock Entry Created with qty=0?
+
+```
+Real World Timeline:
+────────────────────
+Day 1: Admin adds "Amul Butter 100g" to catalog
+       └─► Stock entry created: qty=0 (no physical goods yet)
+       └─► Product visible on app as "Out of Stock"
+
+Day 3: Shipment arrives at warehouse
+       └─► Staff scans/counts items
+       └─► API call: replenish(productId, 500)
+       └─► Stock updated: qty=500, now "In Stock"
+```
+
+**Product catalog exists BEFORE physical inventory arrives.** These are different business events.
+
+### Batch Processing for Bulk Operations
+
+For 1000 products bulk upload:
+
+| Approach | Kafka Events | DB Calls | Efficiency |
+|----------|--------------|----------|------------|
+| Individual inserts | 1000 | 1000 | ❌ Slow |
+| Batch consumer | 1000 | ~10-20 | ✅ Good |
+| Single bulk event | 1 | 1 | ✅ Best |
+
+**Recommendation:** Use batch Kafka consumer for normal flow, bulk events for CSV uploads.
+
+### Sync vs Async for Inter-Service Communication
+
+**Initial (Incorrect) Assumption:**
+```java
+// ❌ We initially thought fully async was better
+// "If inventory-service down, order still succeeds!"
+// But this leads to false promises and bad UX
+```
+
+**Corrected Understanding:**
+```java
+// ✅ SYNC for critical path (stock reservation)
+@Transactional
+public OrderResponse placeOrder(String cartId) {
+    CartResponse cart = cartService.getCart(cartId);
+    
+    // SYNC HTTP call - user needs immediate feedback
+    ReserveResponse reservation = inventoryClient.reserveStock(cart.items());
+    
+    if (!reservation.success()) {
+        // Don't create order, don't clear cart
+        throw new InsufficientStockException(reservation.unavailableItems());
+    }
+    
+    // Only proceed if stock reserved
+    Order order = createAndSaveOrder(cart, reservation);
+    saveOutboxEvent(order, "ORDER_CONFIRMED");  // Async notifications
+    cartService.clearCart(cartId);
+    
+    return buildResponse(order);
+}
+```
+
+**Key Insight:** Not everything should be async. Critical path operations that affect user feedback must be synchronous, even in microservices architecture.
