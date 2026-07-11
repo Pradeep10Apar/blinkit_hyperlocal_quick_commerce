@@ -1,4 +1,15 @@
-# NearrBuy Hyperlocal  — Quick Commerce Backend
+# 📘 NearBuy Hyperlocal — Technical Documentation
+
+> **Comprehensive technical documentation for the Quick Commerce Backend Platform**
+
+![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.6-6DB33F?logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Elasticsearch](https://img.shields.io/badge/Elasticsearch-8.15-005571?logo=elasticsearch&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![Kafka](https://img.shields.io/badge/Kafka-Redpanda-000000?logo=apachekafka&logoColor=white)
+
+---
 
 ## Table of Contents
 - [Project Overview](#project-overview)
@@ -36,11 +47,23 @@
 
 ## Project Overview
 
-A Blinkit-clone quick commerce backend built with Spring Boot. Phase 1 focuses on **Product catalog management** with:
+A **production-grade quick commerce backend** (Blinkit/Zepto clone) built with Spring Boot microservices. The platform supports:
+
+### Core Capabilities
+- 🛒 **Shopping Cart** - Redis-backed with 7-day TTL
+- 🔍 **Product Search** - Full-text search via Elasticsearch (fuzzy matching)
+- 📦 **Inventory Management** - Real-time stock tracking with reservation
+- 🛍️ **Order Processing** - Transactional orders with stock validation
+- 👤 **User Authentication** - JWT-based auth with refresh tokens
+- 📤 **Bulk Upload** - CSV-based product catalog import
+
+### Architecture Highlights
 - **PostgreSQL** as the source of truth (writes)
 - **Elasticsearch** for full-text product search (reads)
 - **Kafka (Redpanda)** as the message broker connecting them via the **Transactional Outbox Pattern**
 - **Redis** for low-latency shopping cart storage
+- **Netflix Eureka** for service discovery
+- **Spring Cloud Gateway** for API routing
 
 ---
 
@@ -48,14 +71,15 @@ A Blinkit-clone quick commerce backend built with Spring Boot. Phase 1 focuses o
 
 | Technology | Version | Purpose |
 |---|---|---|
-| Java | 17 | Language |
-| Spring Boot | 3.3.6 | Framework |
-| PostgreSQL | 16 | Primary database |
-| Elasticsearch | 8.15.2 | Search engine |
+| Java | 17 | Language (LTS) |
+| Spring Boot | 3.3.6 | Application Framework |
+| Spring Cloud | 2023.0.3 | Microservices (Eureka, Gateway) |
+| PostgreSQL | 16 | Primary database (ACID) |
+| Elasticsearch | 8.15.2 | Search engine (full-text) |
 | Redpanda | latest | Kafka-compatible message broker |
-| Kibana | 8.15.2 | ES dashboard |
-| Redis | 7 (alpine image) | Cart cache/storage with TTL |
-| Flyway | 10.14.0 | DB migrations |
+| Kibana | 8.15.2 | Elasticsearch dashboard |
+| Redis | 7 (alpine) | Cart cache/storage with TTL |
+| Flyway | 10.14.0 | Database migrations |
 | Spring Kafka | (managed) | Kafka producer/consumer |
 | Spring Data Redis | (managed) | Redis integration |
 | Apache Commons CSV | 1.10.0 | CSV parsing for bulk uploads |
