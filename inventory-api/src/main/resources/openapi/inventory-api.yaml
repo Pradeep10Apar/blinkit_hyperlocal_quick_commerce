@@ -1,0 +1,191 @@
+openapi: 3.0.3
+info:
+  title: Inventory Service API
+  description: API contract for inventory management - stock checking, reservation, and release
+  version: 1.0.0
+  contact:
+    name: Blinkit Team
+
+servers:
+  - url: http://localhost:8085
+    description: Local development
+
+tags:
+  - name: Inventory
+    description: Inventory management operations
+
+paths:
+  /api/inventory:
+    get:
+      tags:
+        - Inventory
+      summary: Check inventory for multiple products
+      operationId: checkInventory
+      parameters:
+        - name: productIds
+          in: query
+          required: true
+          description: List of product IDs to check
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+      responses:
+        '200':
+          description: Inventory status for requested products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryResponse'
+
+  /api/inventory/reserve:
+    post:
+      tags:
+        - Inventory
+      summary: Reserve stock for an order
+      description: |
+        Atomically reserves stock for all items in the request.
+        Uses "all or nothing" semantics - if any item cannot be reserved,
+        the entire request fails and nothing is reserved.
+      operationId: reserveStock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReserveStockRequest'
+      responses:
+        '200':
+          description: Reservation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReserveStockResponse'
+        '400':
+          description: Invalid request
+
+  /api/inventory/release:
+    post:
+      tags:
+        - Inventory
+      summary: Release previously reserved stock
+      description: Releases stock that was reserved for a cancelled/failed order
+      operationId: releaseStock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReserveStockRequest'
+      responses:
+        '200':
+          description: Release result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReserveStockResponse'
+
+components:
+  schemas:
+    # ─────────────────────────────────────────────────────────────
+    # Request DTOs
+    # ─────────────────────────────────────────────────────────────
+    ReserveStockRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: List of items to reserve
+          items:
+            $ref: '#/components/schemas/ReserveItem'
+
+    ReserveItem:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          format: uuid
+          description: Product ID
+          example: "f70e7254-fa2f-422e-b311-77e593555d52"
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity to reserve
+          example: 2
+
+    # ─────────────────────────────────────────────────────────────
+    # Response DTOs
+    # ─────────────────────────────────────────────────────────────
+    ReserveStockResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Whether all items were successfully reserved
+        reservedItems:
+          type: array
+          description: List of successfully reserved items (only if success=true)
+          items:
+            $ref: '#/components/schemas/ReservedItem'
+        failedItems:
+          type: array
+          description: List of items that failed to reserve (only if success=false)
+          items:
+            $ref: '#/components/schemas/FailedItem'
+
+    ReservedItem:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        reservedQuantity:
+          type: integer
+
+    FailedItem:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        requestedQuantity:
+          type: integer
+          description: How many were requested
+        availableQuantity:
+          type: integer
+          description: How many are actually available
+        reason:
+          type: string
+          enum:
+            - INSUFFICIENT_STOCK
+            - PRODUCT_NOT_FOUND
+          description: Why reservation failed
+
+    InventoryResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          description: Total stock quantity
+        reserved:
+          type: integer
+          description: Currently reserved quantity
+        available:
+          type: integer
+          description: Available for reservation (quantity - reserved)
+        inStock:
+          type: boolean
+          description: Whether product is in stock (available > 0)

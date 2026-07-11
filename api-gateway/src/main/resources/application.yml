@@ -1,0 +1,139 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: API-GATEWAY
+
+  cloud:
+    gateway:
+      # Enable service discovery for routes
+      discovery:
+        locator:
+          enabled: false  # We define routes explicitly below
+
+      # Global CORS configuration
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"   # React dev server
+              - "http://localhost:3000"   # Alternative React port
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            exposedHeaders:
+              - "X-Cart-Id"
+            allowCredentials: true
+
+      # Route definitions
+      routes:
+        # ═══════════════════════════════════════════════════════════
+        # BLINKIT-APP routes (Products, Cart, Orders)
+        # ═══════════════════════════════════════════════════════════
+        - id: products-route
+          uri: lb://BLINKIT-APP
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: blinkitAppCircuitBreaker
+                fallbackUri: forward:/fallback/blinkit-app
+
+        - id: cart-route
+          uri: lb://BLINKIT-APP
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: blinkitAppCircuitBreaker
+                fallbackUri: forward:/fallback/blinkit-app
+
+        - id: orders-route
+          uri: lb://BLINKIT-APP
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: blinkitAppCircuitBreaker
+                fallbackUri: forward:/fallback/blinkit-app
+
+        # ═══════════════════════════════════════════════════════════
+        # INVENTORY-SERVICE routes
+        # ═══════════════════════════════════════════════════════════
+        - id: inventory-route
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: inventoryCircuitBreaker
+                fallbackUri: forward:/fallback/inventory
+
+# ═══════════════════════════════════════════════════════════════════
+# Eureka Client Configuration
+# ═══════════════════════════════════════════════════════════════════
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# ═══════════════════════════════════════════════════════════════════
+# Actuator - expose health and gateway routes info
+# ═══════════════════════════════════════════════════════════════════
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway, circuitbreakers, circuitbreakerevents
+  endpoint:
+    gateway:
+      enabled: true
+    health:
+      show-details: always
+
+# ═══════════════════════════════════════════════════════════════════
+# Resilience4j Circuit Breaker Configuration
+# ═══════════════════════════════════════════════════════════════════
+resilience4j:
+  circuitbreaker:
+    instances:
+      # Circuit Breaker for blinkit-app (Products, Cart, Orders)
+      blinkitAppCircuitBreaker:
+        sliding-window-size: 10              # Look at last 10 requests
+        failure-rate-threshold: 50           # 50% failures = OPEN
+        wait-duration-in-open-state: 30s     # Stay OPEN for 30 seconds
+        permitted-number-of-calls-in-half-open-state: 3   # Test with 3 requests
+        slow-call-duration-threshold: 3s     # Calls > 3s are "slow"
+        slow-call-rate-threshold: 80         # 80% slow calls = OPEN
+        register-health-indicator: true      # Show in actuator health
+        
+      # Circuit Breaker for inventory-service
+      inventoryCircuitBreaker:
+        sliding-window-size: 10              # Look at last 10 requests
+        failure-rate-threshold: 50           # 50% failures = OPEN
+        wait-duration-in-open-state: 60s     # Stay OPEN for 60 seconds
+        permitted-number-of-calls-in-half-open-state: 3   # Test with 3 requests
+        slow-call-duration-threshold: 2s     # Calls > 2s are "slow"
+        slow-call-rate-threshold: 100        # 100% slow calls = OPEN
+        register-health-indicator: true      # Show in actuator health
+        
+  timelimiter:
+    instances:
+      blinkitAppCircuitBreaker:
+        timeout-duration: 5s                 # Max wait time for response
+      inventoryCircuitBreaker:
+        timeout-duration: 3s                 # Max wait time for response
