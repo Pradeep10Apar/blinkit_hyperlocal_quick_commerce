@@ -4,6 +4,8 @@ import com.blinkit.phase1.auth.exception.AuthenticationException;
 import com.blinkit.phase1.auth.exception.EmailAlreadyExistsException;
 import com.blinkit.phase1.cart.CartItemNotFoundException;
 import com.blinkit.phase1.order.InsufficientStockException;
+import com.blinkit.phase1.order.exception.InvalidOrderStatusTransitionException;
+import com.blinkit.phase1.order.exception.OrderNotFoundException;
 import com.blinkit.phase1.product.ProductNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -46,6 +48,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleCartItemNotFound(CartItemNotFoundException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiError(Instant.now(), 404, "NOT_FOUND", ex.getMessage(), req.getRequestURI()));
+    }
+
+    // ==================== Order Exceptions ====================
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ApiError> handleOrderNotFound(OrderNotFoundException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError(Instant.now(), 404, "NOT_FOUND", ex.getMessage(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(InvalidOrderStatusTransitionException.class)
+    public ResponseEntity<ApiError> handleInvalidStatusTransition(InvalidOrderStatusTransitionException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(Instant.now(), 400, "BAD_REQUEST", ex.getMessage(), req.getRequestURI()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
