@@ -31,12 +31,7 @@ public class AuthController {
     /**
      * Register a new user with email and password.
      * 
-     * Request:
-     * {
-     *   "email": "user@example.com",
-     *   "password": "SecureP@ss123",
-     *   "name": "John Doe"
-     * }
+     * 
      * 
      * Response: AuthResponse with tokens and user info
      */
@@ -50,11 +45,7 @@ public class AuthController {
     /**
      * Login with email and password.
      * 
-     * Request:
-     * {
-     *   "email": "user@example.com",
-     *   "password": "SecureP@ss123"
-     * }
+     
      * 
      * Response: AuthResponse with tokens and user info
      */
@@ -67,10 +58,7 @@ public class AuthController {
     /**
      * Refresh access token using refresh token.
      * 
-     * Request:
-     * {
-     *   "refreshToken": "eyJhbGci..."
-     * }
+     
      * 
      * Response: New AuthResponse with fresh tokens
      */
